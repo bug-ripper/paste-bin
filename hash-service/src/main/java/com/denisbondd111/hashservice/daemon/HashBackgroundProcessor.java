@@ -36,7 +36,7 @@ public class HashBackgroundProcessor {
     }
 
 
-    @Scheduled(fixedRate = 5)
+    @Scheduled(fixedRate = 500)
     public void fillDatabase(){
         Long numberOfUnusedHashes = hashRepository.getNumberOfUnusedHashes();
         if (numberOfUnusedHashes < pullDbSize/4){
@@ -45,7 +45,7 @@ public class HashBackgroundProcessor {
         }
     }
 
-    @Scheduled(fixedRate = 5)
+    @Scheduled(fixedRate = 50)
     public void fillCache(){
         if (hashRedisTemplate.opsForList().size("hashes") < pullCacheSize/4){
             fillCacheService.fill(hashRepository.getUnusedHashes(pullCacheSize));
@@ -53,18 +53,17 @@ public class HashBackgroundProcessor {
         }
     }
 
-    @Scheduled(fixedRate = 5)
+    @Scheduled(fixedRate = 50)
     public void writeUsedHashes(){
         Long sizeUnusedHashesList = hashRedisTemplate.opsForList().size("used_hashes");
         if (sizeUnusedHashesList > 0L){
-//            List<Hash> usedHashes = new ArrayList<>();
+            List<Hash> usedHashes = new ArrayList<>();
             for(int i = 0; i < sizeUnusedHashesList; i++){
-//                usedHashes.add(hashRedisTemplate.opsForList().leftPop("used_hashes"));
                 Hash usedHash = hashRedisTemplate.opsForList().leftPop("used_hashes");
                 usedHash.setUsed(Boolean.TRUE);
-                hashRepository.update(usedHash);
+                usedHashes.add(usedHash);
             }
-//            hashRepository.updateAll(usedHashes);
+            hashRepository.updateAll(usedHashes);
             log.info("Used hashes are wrote");
         }
     }
